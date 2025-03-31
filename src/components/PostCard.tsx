@@ -118,7 +118,7 @@ function PostCard({post, dbUserId}: {post:Post; dbUserId: string | null }) {
             <div className='rounded-lg overflow-hidden'>
               <img src={post.image} alt='Post content' className='w-full h-auto object-cover' />
             </div>
-          )};
+          )}
 
           {/* Like and Comment buttons */}
           <div className="flex items-center pt-2 space-x-4">
