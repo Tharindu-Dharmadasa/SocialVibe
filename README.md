@@ -26,7 +26,7 @@ Provides real-time updates and a user-friendly interface.
 ## 🛠 Tech Stack
 - **Frontend:** Next.js, ShadCN UI
 - **Backend:** Node.js, Prisma ORM
-- **Database:** MySQL / PostgreSQL
+- **Database:** PostgreSQL
 - **Authentication:** Clerk
 
 ---
