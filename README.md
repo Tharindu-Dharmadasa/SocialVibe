@@ -35,7 +35,7 @@ Provides real-time updates and a user-friendly interface.
 ```bash
 # Clone the repo
 git clone https://github.com/Tharindu-Dharmadasa/SocialVibe.git
-cd social-media-app
+cd SocialVibe
 
 # Install dependencies
 npm install
