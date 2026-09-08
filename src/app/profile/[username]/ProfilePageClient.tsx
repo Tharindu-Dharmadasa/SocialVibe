@@ -5,37 +5,43 @@ import { toggleFollow } from "@/actions/user.action";
 import PostCard from "@/components/PostCard";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { SignInButton, useUser } from "@clerk/nextjs";
 import { format } from "date-fns";
-import { CalendarIcon, EditIcon, FileTextIcon, HeartIcon, LinkIcon, MapPinIcon } from "lucide-react";
+import {
+  CalendarIcon,
+  EditIcon,
+  FileTextIcon,
+  HeartIcon,
+  LinkIcon,
+  MapPinIcon,
+  UserCheckIcon,
+  UserPlusIcon,
+} from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
 type User = Awaited<ReturnType<typeof getProfileByUsername>>;
 type Posts = Awaited<ReturnType<typeof getUserPosts>>;
 
-
-interface ProfilePageClientProps{
-    user: NonNullable<User>
-    posts: Posts
-    likedPosts: Posts
-    isFollowing: boolean
+interface ProfilePageClientProps {
+  user: NonNullable<User>;
+  posts: Posts;
+  likedPosts: Posts;
+  isFollowing: boolean;
 }
 
-function ProfilePageClient({isFollowing: initialIsFollowing, user, posts, likedPosts}: ProfilePageClientProps) {
-  const {user: currentUser} = useUser();
+function ProfilePageClient({ isFollowing: initialIsFollowing, user, posts, likedPosts }: ProfilePageClientProps) {
+  const { user: currentUser } = useUser();
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [ isFollowing, setIsFollowing] = useState(initialIsFollowing);
+  const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
 
-  const[editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState({
     name: user.name || "",
     bio: user.bio || "",
     location: user.location || "",
@@ -44,223 +50,235 @@ function ProfilePageClient({isFollowing: initialIsFollowing, user, posts, likedP
 
   const handleEditSubmit = async () => {
     const formData = new FormData();
-    Object.entries(editForm).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-
+    Object.entries(editForm).forEach(([key, value]) => formData.append(key, value));
     const result = await updateProfile(formData);
-    if(result.success){
+    if (result.success) {
       setShowEditDialog(false);
-      toast.success("Profile updated successfully.");
+      toast.success("Profile updated!");
     }
-
   };
 
   const handleFollow = async () => {
-    if(!currentUser) return;
-
+    if (!currentUser) return;
     try {
       setIsUpdatingFollow(true);
       await toggleFollow(user.id);
       setIsFollowing(!isFollowing);
-    } catch (error) {
+      toast.success(isFollowing ? "Unfollowed" : "Following!");
+    } catch {
       toast.error("Failed to update follow status.");
-    } finally{
+    } finally {
       setIsUpdatingFollow(false);
     }
   };
 
-  const isOwnProfile = 
-  currentUser?.username === user.userName ||
-  currentUser?.emailAddresses[0].emailAddress.split("@")[0] === user.userName;
+  const isOwnProfile =
+    currentUser?.username === user.userName ||
+    currentUser?.emailAddresses[0].emailAddress.split("@")[0] === user.userName;
 
   const formattedDate = format(new Date(user.createdAt), "MMMM yyyy");
 
-
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="grid grid-cols-1 gap-6">
-        <div className="w-full max-w-lg mx-auto">
-          <Card className="bg-card">
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center text-center">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src={user.image ?? "/avatar.png"} />
-                </Avatar>
-                <h1 className="mt-4 text-2xl font-bold">{user.name ?? user.userName}</h1>
-                <p className="text-muted-foreground">@{user.userName}</p>
-                <p className="mt-2 text-sm">{user.bio}</p>
-
-                {/* PROFILE STATS */}
-                <div className="w-full mt-6">
-                  <div className="flex justify-between mb-4">
-                    <div>
-                      <div className="font-semibold">{user._count.followers.toLocaleString()}</div>
-                      <div className="text-sm text-muted-foreground">Following</div>
-                    </div>
-                    <Separator orientation="vertical" />
-                    <div>
-                      <div className="font-semibold">{user._count.following.toLocaleString()}</div>
-                      <div className="text-sm text-muted-foreground">Followers</div>
-                    </div>
-                    <Separator orientation="vertical" />
-                    <div>
-                      <div className="font-semibold">{user._count.posts.toLocaleString()}</div>
-                      <div className="text-sm text-muted-foreground">Posts</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* "FOLLOW & EDIT PROFILE" BUTTONS */}
-                {!currentUser ? (
-                  <SignInButton mode="modal">
-                    <Button className="w-full mt-4">Follow</Button>
-                  </SignInButton>
-                ) : isOwnProfile ? (
-                  <Button className="w-full mt-4" onClick={() => setShowEditDialog(true)}>
-                    <EditIcon className="size-4 mr-2" />
-                    Edit Profile
-                  </Button>
-                ) : (
-                  <Button
-                    className="w-full mt-4"
-                    onClick={handleFollow}
-                    disabled={isUpdatingFollow}
-                    variant={isFollowing ? "outline" : "default"}
-                  >
-                    {isFollowing ? "Unfollow" : "Follow"}
-                  </Button>
-                )}
-
-                {/* LOCATION & WEBSITE */}
-                <div className="w-full mt-6 space-y-2 text-sm">
-                  {user.location && (
-                    <div className="flex items-center text-muted-foreground">
-                      <MapPinIcon className="size-4 mr-2" />
-                      {user.location}
-                    </div>
-                  )}
-                  {user.website && (
-                    <div className="flex items-center text-muted-foreground">
-                      <LinkIcon className="size-4 mr-2" />
-                      <a
-                        href={
-                          user.website.startsWith("http") ? user.website : `https://${user.website}`
-                        }
-                        className="hover:underline"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {user.website}
-                      </a>
-                    </div>
-                  )}
-                  <div className="flex items-center text-muted-foreground">
-                    <CalendarIcon className="size-4 mr-2" />
-                    Joined {formattedDate}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+    <div className="max-w-2xl mx-auto space-y-5">
+      {/* Profile Card */}
+      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+        {/* Cover / Banner */}
+        <div className="h-32 sm:h-40 bg-gradient-to-br from-primary/70 via-violet-500/50 to-indigo-500/60 relative">
+          <div className="absolute inset-0 bg-mesh opacity-60" />
         </div>
 
-        <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
-            <TabsTrigger
-              value="posts"
-              className="flex items-center gap-2 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary
-               data-[state=active]:bg-transparent px-6 font-semibold"
-            >
-              <FileTextIcon className="size-4" />
-              Posts
-            </TabsTrigger>
-            <TabsTrigger
-              value="likes"
-              className="flex items-center gap-2 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary
-               data-[state=active]:bg-transparent px-6 font-semibold"
-            >
-              <HeartIcon className="size-4" />
-              Likes
-            </TabsTrigger>
-          </TabsList>
+        {/* Avatar & Actions */}
+        <div className="px-5 pb-5">
+          <div className="flex items-end justify-between -mt-12 mb-4">
+            <Avatar className="w-20 h-20 sm:w-24 sm:h-24 ring-4 ring-card shadow-xl">
+              <AvatarImage src={user.image ?? "/avatar.png"} />
+            </Avatar>
 
-          <TabsContent value="posts" className="mt-6">
-            <div className="space-y-6">
-              {posts.length > 0 ? (
-                posts.map((post) => <PostCard key={post.id} post={post} dbUserId={user.id} />)
+            <div className="flex gap-2 mb-1">
+              {!currentUser ? (
+                <SignInButton mode="modal">
+                  <Button size="sm" className="rounded-xl gap-2 font-semibold">
+                    <UserPlusIcon className="size-4" />
+                    Follow
+                  </Button>
+                </SignInButton>
+              ) : isOwnProfile ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl gap-2 font-medium"
+                  onClick={() => setShowEditDialog(true)}
+                >
+                  <EditIcon className="size-3.5" />
+                  Edit Profile
+                </Button>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">No posts yet</div>
+                <Button
+                  size="sm"
+                  variant={isFollowing ? "outline" : "default"}
+                  className="rounded-xl gap-2 font-semibold"
+                  onClick={handleFollow}
+                  disabled={isUpdatingFollow}
+                >
+                  {isFollowing ? (
+                    <><UserCheckIcon className="size-4" /> Following</>
+                  ) : (
+                    <><UserPlusIcon className="size-4" /> Follow</>
+                  )}
+                </Button>
               )}
             </div>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="likes" className="mt-6">
-            <div className="space-y-6">
-              {likedPosts.length > 0 ? (
-                likedPosts.map((post) => <PostCard key={post.id} post={post} dbUserId={user.id} />)
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">No liked posts to show</div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+          {/* Name & Bio */}
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
+              {user.name ?? user.userName}
+            </h1>
+            <p className="text-muted-foreground text-sm">@{user.userName}</p>
+            {user.bio && (
+              <p className="mt-2.5 text-sm text-foreground leading-relaxed">{user.bio}</p>
+            )}
+          </div>
 
-        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Edit Profile</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input
-                  name="name"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  placeholder="Your name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Bio</Label>
-                <Textarea
-                  name="bio"
-                  value={editForm.bio}
-                  onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
-                  className="min-h-[100px]"
-                  placeholder="Tell us about yourself"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Location</Label>
-                <Input
-                  name="location"
-                  value={editForm.location}
-                  onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                  placeholder="Where are you based?"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Website</Label>
-                <Input
-                  name="website"
-                  value={editForm.website}
-                  onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
-                  placeholder="Your personal website"
-                />
-              </div>
+          {/* Meta info */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-sm text-muted-foreground">
+            {user.location && (
+              <span className="flex items-center gap-1.5">
+                <MapPinIcon className="size-3.5 text-primary/70" />
+                {user.location}
+              </span>
+            )}
+            {user.website && (
+              <a
+                href={user.website.startsWith("http") ? user.website : `https://${user.website}`}
+                className="flex items-center gap-1.5 text-primary hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <LinkIcon className="size-3.5" />
+                {user.website.replace(/^https?:\/\//, "")}
+              </a>
+            )}
+            <span className="flex items-center gap-1.5">
+              <CalendarIcon className="size-3.5 text-primary/70" />
+              Joined {formattedDate}
+            </span>
+          </div>
+
+          {/* Stats Row */}
+          <div className="flex gap-5 mt-4 pt-4 border-t border-border">
+            <div>
+              <span className="font-bold text-foreground">{user._count.following.toLocaleString()}</span>
+              <span className="text-sm text-muted-foreground ml-1.5">Following</span>
             </div>
-            <div className="flex justify-end gap-3">
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button onClick={handleEditSubmit}>Save Changes</Button>
+            <div>
+              <span className="font-bold text-foreground">{user._count.followers.toLocaleString()}</span>
+              <span className="text-sm text-muted-foreground ml-1.5">Followers</span>
             </div>
-          </DialogContent>
-        </Dialog>
+            <div>
+              <span className="font-bold text-foreground">{user._count.posts.toLocaleString()}</span>
+              <span className="text-sm text-muted-foreground ml-1.5">Posts</span>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Posts / Likes Tabs */}
+      <Tabs defaultValue="posts" className="w-full">
+        <TabsList className="w-full justify-start border border-border rounded-2xl h-auto p-1 bg-card gap-1">
+          <TabsTrigger
+            value="posts"
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
+          >
+            <FileTextIcon className="size-4" />
+            Posts
+            <span className="text-xs opacity-70">({posts.length})</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="likes"
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
+          >
+            <HeartIcon className="size-4" />
+            Likes
+            <span className="text-xs opacity-70">({likedPosts.length})</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="posts" className="mt-4">
+          <div className="space-y-4">
+            {posts.length > 0 ? (
+              posts.map((post) => <PostCard key={post.id} post={post} dbUserId={user.id} />)
+            ) : (
+              <div className="text-center py-16 rounded-2xl border border-border bg-card">
+                <FileTextIcon className="size-10 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-muted-foreground font-medium">No posts yet</p>
+                <p className="text-muted-foreground/60 text-sm mt-1">When {isOwnProfile ? "you share" : "they share"} a post, it'll appear here.</p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="likes" className="mt-4">
+          <div className="space-y-4">
+            {likedPosts.length > 0 ? (
+              likedPosts.map((post) => <PostCard key={post.id} post={post} dbUserId={user.id} />)
+            ) : (
+              <div className="text-center py-16 rounded-2xl border border-border bg-card">
+                <HeartIcon className="size-10 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-muted-foreground font-medium">No liked posts yet</p>
+                <p className="text-muted-foreground/60 text-sm mt-1">Posts {isOwnProfile ? "you like" : "they like"} will show up here.</p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-[480px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Edit Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {[
+              { key: "name", label: "Display Name", placeholder: "Your name", type: "input" },
+              { key: "bio", label: "Bio", placeholder: "Tell the world about yourself", type: "textarea" },
+              { key: "location", label: "Location", placeholder: "Where are you based?", type: "input" },
+              { key: "website", label: "Website", placeholder: "https://yourwebsite.com", type: "input" },
+            ].map(({ key, label, placeholder, type }) => (
+              <div key={key} className="space-y-1.5">
+                <Label className="text-sm font-medium">{label}</Label>
+                {type === "textarea" ? (
+                  <Textarea
+                    value={editForm[key as keyof typeof editForm]}
+                    onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
+                    className="min-h-[90px] rounded-xl resize-none"
+                    placeholder={placeholder}
+                  />
+                ) : (
+                  <Input
+                    value={editForm[key as keyof typeof editForm]}
+                    onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
+                    className="rounded-xl"
+                    placeholder={placeholder}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <DialogClose asChild>
+              <Button variant="outline" className="rounded-xl">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleEditSubmit} className="rounded-xl font-semibold">
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-export default ProfilePageClient
+export default ProfilePageClient;

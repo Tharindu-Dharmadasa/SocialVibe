@@ -5,17 +5,17 @@ import { Avatar, AvatarImage } from "./ui/avatar";
 import FollowButton from "./FollowButton";
 
 async function WhoToFollow() {
-    const users = await getRandomUsers();
-    
-    if(users.length === 0) return null;
+  const users = await getRandomUsers();
 
-    return (
+  if (users.length === 0) return null;
+
+  return (
     <Card>
-        <CardHeader>
-            <CardTitle>Who to Follow</CardTitle> 
-        </CardHeader>
+      <CardHeader>
+        <CardTitle>Who to Follow</CardTitle>
+      </CardHeader>
 
-        <CardContent>
+      <CardContent>
         <div className="space-y-4">
           {users.map((user) => (
             <div key={user.id} className="flex gap-2 items-center justify-between ">

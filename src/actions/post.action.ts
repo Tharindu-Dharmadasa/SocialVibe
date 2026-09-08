@@ -158,7 +158,7 @@ export async function createComment(postId: string, content: string) {
 
     if (!post) throw new Error("Post not found");
 
-    // Create comment and notification 
+    // Create comment and notification
     const [comment] = await prisma.$transaction(async (tx) => {
       // Create comment first
       const newComment = await tx.comment.create({
@@ -193,27 +193,27 @@ export async function createComment(postId: string, content: string) {
   }
 }
 
-export async function deletePost(postId:string) {
-    try {
-        const userId = await getDbUserId();
+export async function deletePost(postId: string) {
+  try {
+    const userId = await getDbUserId();
 
-        const post = await prisma.post.findUnique({
-            where:{id: postId},
-            select:{authorId: true},
-        });
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true },
+    });
 
-        if(!post) throw new Error("Post not found!");
-        if(post.authorId !== userId) throw new Error("Unauthorized - no permission to delete");
+    if (!post) throw new Error("Post not found!");
+    if (post.authorId !== userId)
+      throw new Error("Unauthorized - no permission to delete");
 
-        await prisma.post.delete({
-            where:{id: postId},
-        });
+    await prisma.post.delete({
+      where: { id: postId },
+    });
 
-        revalidatePath("/");
-        return {success: true};
-
-    } catch (error) { 
-        console.error("Failed to delete post", error);
-        return{success: false, error: "Failed to delete post"};
-    }
+    revalidatePath("/");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete post", error);
+    return { success: false, error: "Failed to delete post" };
+  }
 }

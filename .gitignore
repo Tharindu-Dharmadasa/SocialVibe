@@ -38,3 +38,6 @@ next-env.d.ts
 # env files
 .env
 
+
+# clerk configuration (can include secrets)
+/.clerk/

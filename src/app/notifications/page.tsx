@@ -31,8 +31,8 @@ function NotificationsPage() {
   const [notifications, setNotification] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(()=>{
-    const fetchNotification = async ()=>{
+  useEffect(() => {
+    const fetchNotification = async () => {
 
       try {
         const data = await getNotifications();
@@ -40,11 +40,11 @@ function NotificationsPage() {
 
         const unreadIds = data.filter(m => !m.read).map(m => m.id);
 
-        if(unreadIds.length > 0) await markNotificationsAsRead(unreadIds);
+        if (unreadIds.length > 0) await markNotificationsAsRead(unreadIds);
 
       } catch (error) {
         toast.error("Failed to fetch notifications.");
-      } finally{
+      } finally {
         setIsLoading(false);
       }
 
@@ -54,7 +54,7 @@ function NotificationsPage() {
 
   }, []);
 
-  if(isLoading) return <NotificationsSkeleton />
+  if (isLoading) return <NotificationsSkeleton />
 
   return (
     <div className="space-y-4">
@@ -75,9 +75,8 @@ function NotificationsPage() {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`flex items-start gap-4 p-4 border-b hover:bg-muted/25 transition-colors ${
-                    !notification.read ? "bg-muted/50" : ""
-                  }`}
+                  className={`flex items-start gap-4 p-4 border-b hover:bg-muted/25 transition-colors ${!notification.read ? "bg-muted/50" : ""
+                    }`}
                 >
                   <Avatar className="mt-1">
                     <AvatarImage src={notification.creator.image ?? "/avatar.png"} />
@@ -92,8 +91,8 @@ function NotificationsPage() {
                         {notification.type === "FOLLOW"
                           ? "started following you"
                           : notification.type === "LIKE"
-                          ? "liked your post"
-                          : "commented on your post"}
+                            ? "liked your post"
+                            : "commented on your post"}
                       </span>
                     </div>
 
