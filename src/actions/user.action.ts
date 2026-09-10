@@ -1,28 +1,28 @@
 "use server";
 
-import  {prisma}  from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
 export async function syncUser() {
-    
+
     try {
-        const {userId} = await auth();
+        const { userId } = await auth();
         const user = await currentUser();
 
-        if(!userId || !user) return;
+        if (!userId || !user) return;
 
         //check if user exists
         const existingUser = await prisma.user.findUnique({
-            where:{
+            where: {
                 clerkId: userId,
             },
         });
 
-        if(existingUser) return existingUser;
+        if (existingUser) return existingUser;
 
         const dbUser = await prisma.user.create({
-            data:{
+            data: {
                 clerkId: userId,
                 name: `${user.firstName || ""} ${user.lastName || ""}`,
                 userName: user.username ?? user.emailAddresses[0].emailAddress.split("@")[0],
@@ -31,25 +31,38 @@ export async function syncUser() {
             }
         })
 
+        // prisma/seed.ts example
+        // for (let i = 1; i <= 50; i++) {
+        //     await prisma.user.create({
+        //         data: {
+        //             clerkId: `test_clerk_${i}`,
+        //             email: `user${i}@example.com`,
+        //             userName: `user_${i}`,
+        //             name: `User ${i}`
+        //         }
+        //     });
+        // }
+
+
         return dbUser;
     } catch (error) {
-        
+
     }
 
 }
 
-export async function getUserByClerkId(clerkId:string) {
+export async function getUserByClerkId(clerkId: string) {
     return prisma.user.findUnique({
-        where:{
+        where: {
             clerkId,
         },
 
-        include:{
-            _count:{
-                select:{
-                    followers:true,
-                    following:true,
-                    posts:true,
+        include: {
+            _count: {
+                select: {
+                    followers: true,
+                    following: true,
+                    posts: true,
                 }
             }
         },
@@ -57,13 +70,13 @@ export async function getUserByClerkId(clerkId:string) {
 }
 
 export async function getDbUserId() {
-    const {userId:clerkId} = await auth();
+    const { userId: clerkId } = await auth();
     console.log("Auth response:", clerkId);
 
-    if(!clerkId) return null;
+    if (!clerkId) return null;
 
     const user = await getUserByClerkId(clerkId);
-    if(!user) {
+    if (!user) {
         throw new Error("User not found")
     };
 
@@ -74,14 +87,14 @@ export async function getRandomUsers() {
     try {
         const userId = await getDbUserId();
 
-        if(!userId) return [];
+        if (!userId) return [];
 
         //get random 3 users. without ourself and already followed users.
         const randomUsers = await prisma.user.findMany({
-            where:{
-                AND:[
+            where: {
+                AND: [
                     {
-                        NOT:{id: userId}
+                        NOT: { id: userId }
                     },
                     {
                         NOT: {
@@ -93,13 +106,13 @@ export async function getRandomUsers() {
                 ]
             },
 
-            select:{
+            select: {
                 id: true,
                 name: true,
                 userName: true,
                 image: true,
-                _count:{
-                    select:{
+                _count: {
+                    select: {
                         followers: true,
                     }
                 },
@@ -119,13 +132,13 @@ export async function toggleFollow(targetUserId: string) {
     try {
         const userId = await getDbUserId();
 
-        if(!userId) return;
+        if (!userId) return;
 
-        if(userId === targetUserId) throw new Error("You cannot follow yourself!");
+        if (userId === targetUserId) throw new Error("You cannot follow yourself!");
 
         const existingFollow = await prisma.follows.findUnique({
-            where:{
-                followerId_followingId:{
+            where: {
+                followerId_followingId: {
                     followerId: userId,
                     followingId: targetUserId,
                 }
@@ -135,27 +148,27 @@ export async function toggleFollow(targetUserId: string) {
         if (existingFollow) {
             //unfollow
             await prisma.follows.delete({
-                where:{
-                    followerId_followingId:{
+                where: {
+                    followerId_followingId: {
                         followerId: userId,
                         followingId: targetUserId,
                     }
                 }
             });
 
-        }else{
+        } else {
             //follow
             await prisma.$transaction([
                 prisma.follows.create({
-                    data:{
+                    data: {
                         followerId: userId,
                         followingId: targetUserId,
                     }
                 }),
 
                 prisma.notification.create({
-                    data:{
-                        type:"FOLLOW",
+                    data: {
+                        type: "FOLLOW",
                         userId: targetUserId, // user being followed
                         creatorId: userId, //user following
                     }
@@ -164,11 +177,11 @@ export async function toggleFollow(targetUserId: string) {
         }
 
         revalidatePath("/");
-        return { success: true};
+        return { success: true };
 
     } catch (error) {
         console.log("Error in toggle follow", error)
-        return { success: false, error:"Error toggling follow"}        
+        return { success: false, error: "Error toggling follow" }
     }
-    
+
 }

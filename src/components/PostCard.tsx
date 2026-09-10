@@ -24,6 +24,7 @@ function PostCard({ post, dbUserId }: { post: Post; dbUserId: string | null }) {
   const [optimisticLikes, setOptimisticLikes] = useState(post._count.likes);
   const [showComments, setShowComments] = useState(false);
 
+  // Optimistic UI update for like button
   const handleLike = async () => {
     if (isLiking) return;
     try {
