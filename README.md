@@ -20,8 +20,6 @@ Connect · Share · Inspire
 
 ## 📸 Screenshots
 
-> _Add your project screenshots below by replacing the placeholder paths._
-
 | Login Page | Home Feed | Profile Page |
 |:---:|:---:|:---:|
 | ![Login](docs/images/login.png) | ![Home](docs/images/home.png) | ![Profile](docs/images/profile.png) |
